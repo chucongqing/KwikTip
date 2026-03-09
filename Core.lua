@@ -1,5 +1,6 @@
 -- KwikTip: Core.lua (Event tracking, logging, commands, detection)
 local ADDON_NAME, KwikTip = ...
+local L = KwikTip.L
 
 local frame = CreateFrame("Frame", "KwikTipCoreFrame", UIParent)
 frame:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -395,13 +396,15 @@ end
 -- ============================================================
 
 -- Static demo notes — module-scoped so ShowPreview doesn't reallocate on every call.
-local DEMO_NOTES = {
-    { role = "general",   text = "Avoid the red zones; use a personal defensive on the big hit." },
-    { role = "tank",      text = "Tank swap at 3 stacks of the debuff." },
-    { role = "healer",    text = "Major healing CDs after every Cataclysm cast." },
-    { role = "dps",       text = "Kill adds before switching back to the boss." },
-    { role = "interrupt", text = "Shadowbolt — interrupt every cast, no exceptions." },
-}
+local function GetDemoNotes()
+    return {
+        { role = "general",   text = L["Avoid the red zones; use a personal defensive on the big hit."] or "Avoid the red zones; use a personal defensive on the big hit." },
+        { role = "tank",      text = L["Tank swap at 3 stacks of the debuff."] or "Tank swap at 3 stacks of the debuff." },
+        { role = "healer",    text = L["Major healing CDs after every Cataclysm cast."] or "Major healing CDs after every Cataclysm cast." },
+        { role = "dps",       text = L["Kill adds before switching back to the boss."] or "Kill adds before switching back to the boss." },
+        { role = "interrupt", text = L["Shadowbolt — interrupt every cast, no exceptions."] or "Shadowbolt — interrupt every cast, no exceptions." },
+    }
+end
 
 -- Show a demo tip in the HUD with one note of every role category.
 -- Sets previewActive so UpdateContent won't override it while config is open.
@@ -409,7 +412,7 @@ local DEMO_NOTES = {
 function KwikTip:ShowPreview()
     self.previewActive = true
     self:InitHUD()
-    self:SetContent(FormatHeader("Demo Dungeon", "Example Boss") .. "\n" .. FormatNotes(DEMO_NOTES))
+    self:SetContent(FormatHeader(L["Demo Dungeon"] or "Demo Dungeon", L["Example Boss"] or "Example Boss") .. "\n" .. FormatNotes(GetDemoNotes()))
     self:UpdateVisibility()
 end
 
@@ -453,7 +456,7 @@ SlashCmdList["KWIKTIP"] = function(msg)
         local mobCount       = KwikTipDB.mobLog       and #KwikTipDB.mobLog       or 0
         local encounterCount = KwikTipDB.encounterLog and #KwikTipDB.encounterLog or 0
         local snapshotCount  = KwikTipDB.debugSnapshots and #KwikTipDB.debugSnapshots or 0
-        print("|cff00ff00KwikTip|r debug:")
+        print(string.format("|cff00ff00KwikTip|r %s", L["KwikTip debug:"] or "debug:"))
         print(string.format("  inInstance=%s  type=%s  boss=%s  bossTarget=%s  trash=%s  area=%s  dungeon=%s",
             tostring(inInstance), tostring(instanceType),
             tostring(KwikTip.bossActive), tostring(KwikTip.bossTargetActive),
@@ -493,14 +496,14 @@ SlashCmdList["KWIKTIP"] = function(msg)
         KwikTipDB.mobLog        = {}
         KwikTipDB.encounterLog  = {}
         KwikTipDB.debugSnapshots = {}
-        print("|cff00ff00KwikTip|r mapIDLog, mobLog, encounterLog, and debugSnapshots cleared.")
+        print(string.format("|cff00ff00KwikTip|r %s", L["mapIDLog, mobLog, encounterLog, and debugSnapshots cleared."] or "mapIDLog, mobLog, encounterLog, and debugSnapshots cleared."))
     elseif cmd == "config" or cmd == "" then
         KwikTip:ToggleConfig()
     else
-        print("|cff00ff00KwikTip|r commands:")
-        print("  /kwik          — open settings")
-        print("  /kwik move     — toggle move/lock mode")
-        print("  /kwik debug    — print detection state and position")
-        print("  /kwik clearlog — clear all debug logs")
+        print(string.format("|cff00ff00KwikTip|r %s", L["KwikTip commands:"] or "commands:"))
+        print(L["  /kwik          — open settings"] or "  /kwik          — open settings")
+        print(L["  /kwik move     — toggle move/lock mode"] or "  /kwik move     — toggle move/lock mode")
+        print(L["  /kwik debug    — print detection state and position"] or "  /kwik debug    — print detection state and position")
+        print(L["  /kwik clearlog — clear all debug logs"] or "  /kwik clearlog — clear all debug logs")
     end
 end

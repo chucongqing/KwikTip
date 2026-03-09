@@ -1,6 +1,13 @@
 -- KwikTip: Initialization & Defaults
 local ADDON_NAME, KwikTip = ...
 
+-- Initialize localization
+KwikTip.L = KwikTip.L or {}
+local L = KwikTip.L
+
+-- LibSharedMedia-3.0 Support
+local LSM = LibStub("LibSharedMedia-3.0", true)
+
 KwikTip.DEFAULTS = {
     width          = 220,
     height         = 80,
@@ -16,6 +23,11 @@ KwikTip.DEFAULTS = {
     mobLog         = {},
     encounterLog   = {},     -- always-on; records every ENCOUNTER_START encounterID seen
     debugSnapshots = {},     -- written by /kwik debug; inspection log for post-session review
+    
+    -- Font settings
+    fontName       = "Friz Quadrata TT", -- Default WoW font name
+    fontSize       = 12,
+    fontOutline    = "OUTLINE",
 }
 
 -- ============================================================
@@ -58,5 +70,5 @@ function KwikTip:OnLogin()
     if self.UpdateVisibility then self:UpdateVisibility() end
     if self.UpdateContent then self:UpdateContent() end
     if self._PlaceMinimapBtn then self:_PlaceMinimapBtn() end
-    print("|cff00ff00KwikTip|r loaded. Type /kwik for settings.")
+    print(string.format("|cff00ff00KwikTip|r %s", L["KwikTip loaded. Type /kwik for settings."] or "loaded. Type /kwik for settings."))
 end

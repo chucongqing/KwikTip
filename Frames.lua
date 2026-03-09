@@ -1,12 +1,36 @@
 -- KwikTip: HUD frame and layout API
 local ADDON_NAME, KwikTip = ...
 
+local LSM = LibStub("LibSharedMedia-3.0", true)
+
 -- ============================================================
 -- HUD Frame
 -- ============================================================
 local hud
 local contentText
 local cornerHandles = {}
+
+-- ============================================================
+-- Font Handling
+-- ============================================================
+
+function KwikTip:UpdateFont()
+    if not contentText then return end
+    local db = KwikTipDB
+    local fontPath
+    
+    if LSM then
+        fontPath = LSM:Fetch("font", db.fontName)
+    end
+    
+    -- Fallback to GameFontNormal if LSM is missing or font not found
+    if not fontPath then
+        local _, size, flags = GameFontNormal:GetFont()
+        contentText:SetFont(GameFontNormal:GetFont(), db.fontSize or size, db.fontOutline or flags)
+    else
+        contentText:SetFont(fontPath, db.fontSize, db.fontOutline)
+    end
+end
 
 -- ============================================================
 -- Drag and resize support
@@ -51,6 +75,8 @@ function KwikTip:InitHUD()
     contentText:SetWordWrap(true)
     contentText:SetText("")
     KwikTip.HUDText = contentText
+    
+    self:UpdateFont()
 
     hud:SetScript("OnMouseDown", function(self, button)
         if button == "LeftButton" then
@@ -108,6 +134,7 @@ function KwikTip:ApplySettings()
     hud:SetBackdropColor(0, 0, 0, db.alpha)
     hud:ClearAllPoints()
     hud:SetPoint("CENTER", UIParent, "CENTER", db.x or 0, db.y or 0)
+    self:UpdateFont()
 end
 
 -- Show the HUD when any active state warrants it, or when move mode is active.

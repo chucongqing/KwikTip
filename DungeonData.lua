@@ -12,47 +12,12 @@
 --                IDs marked 0 need to be confirmed in-game.
 --
 local ADDON_NAME, KwikTip = ...
+local L = KwikTip.L
 
 -- ============================================================
 -- Dungeon Data
 -- ============================================================
--- Fields per dungeon:
---   instanceID  : GetInstanceInfo() 8th return — primary dungeon identifier
---   uiMapID     : C_Map.GetBestMapForUnit("player") inside the instance
---   altMapIDs   : additional uiMapIDs for entrance/antechamber sub-zones (fallback lookup)
---   name        : display name
---   location    : zone the entrance is in
---   season      : "midnight" = new dungeon  |  "legacy" = returning M+ dungeon
---   type        : "level" = leveling (81-88)  |  "max" = max-level (88-90)
---   mythicPlus  : true if in the Season 1 Mythic+ key rotation, false = Mythic 0 only
---   bosses      : ordered list; each entry has:
---     encounterID : ENCOUNTER_START event ID (from LittleWigs SetEncounterID). 0 = unknown.
---     npcID       : (optional) NPC ID from UnitGUID; enables tip on targeting before ENCOUNTER_START fires.
---                   Source from Wowhead. Required for boss rooms with no subzone text.
---     name        : boss name as shown in the game
---     tip         : short contextual tip shown in the HUD during the boss fight (flat string; legacy/fallback)
---     notes       : (optional) structured role-aware notes; if present, replaces `tip` in the HUD.
---                   Each entry: { role = "general"|"tank"|"healer"|"dps"|"interrupt", text = "..." }
---                   Rendered with role-colored icon prefixes (tank=blue, healer=green, dps=orange,
---                   interrupt=gold). `tip` is kept alongside for reference during migration.
---   trash       : optional list of notable trash mobs; PLAYER_TARGET_CHANGED shows tip on match
---     npcID     : numeric NPC ID extracted from UnitGUID("target"):match("-(%d+)-%x+$")
---     name      : mob display name
---     tip       : contextual tip shown in HUD when this mob is targeted (flat string; legacy/fallback)
---     notes     : (optional) structured role-aware notes; same format as boss notes above
---   areas       : optional list; if present, HUD switches to area-based tips
---                 matched against GetSubZoneText() as the player moves through the dungeon
---     subzone   : exact string returned by GetSubZoneText() for this area (verify in-game)
---     mapID     : (optional) uiMapID match via C_Map.GetBestMapForUnit — fallback for areas
---                 with no subzone text (e.g. arena-style dungeons). Fires on ZONE_CHANGED_NEW_AREA.
---     tip       : contextual tip shown in HUD when the player is in this sub-zone
---     bossIndex : (optional) 1-based index into dungeon.bosses; if set, the boss tip is
---                 shown instead of `tip` — use for boss room sub-zones so the tip appears
---                 on entry rather than waiting for ENCOUNTER_START
---
--- Season 1 M+ rotation (8 dungeons total):
---   New Midnight: Magisters' Terrace, Maisara Caverns, Nexus-Point Xenas, Windrunner Spire
---   Legacy:       Algeth'ar Academy, Pit of Saron, Seat of the Triumvirate, Skyreach
+-- ... (comments) ...
 
 KwikTip.DUNGEONS = {
 
@@ -63,21 +28,21 @@ KwikTip.DUNGEONS = {
         instanceID = 2805,  -- confirmed in-game
         uiMapID    = 2492,  -- confirmed in-game
         altMapIDs  = { 2537, 2493, 2494, 2496, 2497, 2498, 2499 },  -- all confirmed in-game
-        name       = "Windrunner Spire",
+        name       = L["Windrunner Spire"],
         location   = "Eversong Woods",
         season     = "midnight",
         type       = "level",
         mythicPlus = true,
         bosses = {
-            { encounterID = 3056, name = "Emberdawn",          tip = "Drop Flaming Updraft puddles at the room's outer edges; play close to the boss during Burning Gale (16s) to minimize movement when dodging Twisters and Fire Breath frontals; healer major CDs on Burning Gale." },
-            { encounterID = 3057, name = "Derelict Duo",       tip = "Keep both at equal health — Broken Bond enrages the survivor; interrupt Shadow Bolt; dispel Curse of Darkness to despawn Dark Entity adds; tank defensive for Bone Hack and Splattering Spew (drops puddles — spread loosely); stand behind Kalis so Latch's Heaving Yank pulls her and cancels Debilitating Shriek." },
-            { encounterID = 3058, name = "Commander Kroluk",   tip = "Reckless Leap targets furthest player — stack in melee with one defensive player baiting it; stay near an ally or Intimidating Shout fears you; at 66%/33% kill adds (interrupt Phantasmal Mystic at 50% or it enrages the pull)." },
-            { encounterID = 3059, name = "The Restless Heart", tip = "Manage Squall Leap DoT stacks — step on Turbulent Arrows to clear them and to vault over Bullseye Windblast shockwave at 100 energy; dodge Bolt Gale frontal; tank use defensive for Tempest Slash knockback and damage-taken amp." },
+            { encounterID = 3056, name = L["Emberdawn"],          tip = L["Emberdawn_Tip"] },
+            { encounterID = 3057, name = L["Derelict Duo"],       tip = L["DerelictDuo_Tip"] },
+            { encounterID = 3058, name = L["Commander Kroluk"],   tip = L["CommanderKroluk_Tip"] },
+            { encounterID = 3059, name = L["The Restless Heart"], tip = L["TheRestlessHeart_Tip"] },
         },
         trash = {
-            { npcID = 232070, name = "Restless Steward",   tip = "Interrupt Spirit Bolt; Magic dispel Soul Torment on debuffed players ASAP, then use defensives or focus healing for the remaining player." },
-            { npcID = 232113, name = "Spellguard Magus",   tip = "Defensives for Arcane Salvo; at 50% it drops a Spellguard's Protection zone (99% DR) — tank move the mob and any other mobs out of it immediately." },
-            { npcID = 232067, name = "Creeping Spindleweb", tip = "Poison Spray — use a personal defensive." },
+            { npcID = 232070, name = L["Restless Steward"],   tip = L["RestlessSteward_Tip"] },
+            { npcID = 232113, name = L["Spellguard Magus"],   tip = L["SpellguardMagus_Tip"] },
+            { npcID = 232067, name = L["Creeping Spindleweb"], tip = L["CreepingSpindleweb_Tip"] },
         },
         areas = {
             { subzone = "Vereesa's Repose",    bossIndex = 1 },  -- wing bosses (Emberdawn + Derelict Duo share this subzone); confirmed in-game; bossIndex=1 shows Emberdawn tip on entry — ENCOUNTER_START overrides for Derelict Duo
@@ -89,16 +54,16 @@ KwikTip.DUNGEONS = {
         instanceID = 2813,  -- confirmed in-game
         uiMapID    = 2433,  -- confirmed in-game
         altMapIDs  = { 2435, 2434 },  -- confirmed in-game
-        name       = "Murder Row",
+        name       = L["Murder Row"],
         location   = "Silvermoon City",
         season     = "midnight",
         type       = "level",
         mythicPlus = false,
         bosses = {
-            { encounterID = 3101, name = "Kystia Manaheart",        tip = "Dispel Illicit Infusion from Nibbles for 15s stun + 100% dmg window — Kystia radiates Chaos AoE during this phase so healer CDs needed; dodge Nibbles' Fel Spray cone while she's hostile; interrupt Mirror Images." },
-            { encounterID = 3102, name = "Zaen Bladesorrow",        tip = "Stand behind Forbidden Freight during Murder in a Row; move Fire Bomb away from freight (it destroys cover); Heartstop Poison halves tank max health — prioritize tank healing." },
-            { encounterID = 3103, name = "Xathuux the Annihilator", tip = "At 100 energy, Demonic Rage pulses heavy group AoE and buffs boss attack speed — use defensives and healer CDs. Dodge Axe Toss impact zones (Fel Light persists on ground); avoid Burning Steps hazards. Tank: Legion Strike applies 80% healing reduction — call for an external." },
-            { encounterID = 3105, name = "Lithiel Cinderfury",      tip = "Kill Wild Imps before Malefic Wave reaches them (they gain haste if hit); use Gateways to avoid the wave; interrupt Chaos Bolt." },
+            { encounterID = 3101, name = L["Kystia Manaheart"],        tip = L["KystiaManaheart_Tip"] },
+            { encounterID = 3102, name = L["Zaen Bladesorrow"],        tip = L["ZaenBladesorrow_Tip"] },
+            { encounterID = 3103, name = L["Xathuux the Annihilator"], tip = L["XathuuxAnnihilator_Tip"] },
+            { encounterID = 3105, name = L["Lithiel Cinderfury"],      tip = L["LithielCinderfury_Tip"] },
         },
         areas = {
             { subzone = "Silvermoon Pet Shop", bossIndex = 1 },  -- Kystia Manaheart; confirmed in-game
@@ -111,15 +76,15 @@ KwikTip.DUNGEONS = {
         instanceID = 2825,  -- BigWigs, unverified in-game
         uiMapID    = 2514,
         altMapIDs  = { 2564, 2513 },  -- 2564 = Dreamer's Passage/Heart of Rage; 2513 = Heart of Rage (confirmed in-game)
-        name       = "Den of Nalorakk",
+        name       = L["Den of Nalorakk"],
         location   = "Zul'Aman",
         season     = "midnight",
         type       = "level",
         mythicPlus = false,
         bosses = {
-            { encounterID = 3207, name = "The Hoardmonger",    tip = "At 90%/60%/30%, boss retreats to empower; destroy Rotten Mushrooms before burst (Toxic Spores debuff); dodge frontals." },
-            { encounterID = 3208, name = "Sentinel of Winter", tip = "Dodge Raging Squalls and Snowdrift pools; at 100 energy boss channels Eternal Winter (shields self + heavy group damage) — use damage CDs to break the shield fast, healer CDs to survive." },
-            { encounterID = 3209, name = "Nalorakk",           tip = "Fury of the War God: intercept charging echoes to protect Zul'jarra; spread when Echoing Maul marks you." },
+            { encounterID = 3207, name = L["The Hoardmonger"],    tip = L["TheHoardmonger_Tip"] },
+            { encounterID = 3208, name = L["Sentinel of Winter"], tip = L["SentinelOfWinter_Tip"] },
+            { encounterID = 3209, name = L["Nalorakk"],           tip = L["Nalorakk_Tip"] },
         },
         areas = {
             { subzone = "Enduring Winter",   bossIndex = 1 },  -- first two bosses share this subzone (Hoardmonger + Sentinel of Winter); confirmed in-game (mapID 2514); bossIndex=1 shows Hoardmonger tip on entry — ENCOUNTER_START overrides for Sentinel of Winter
@@ -129,30 +94,30 @@ KwikTip.DUNGEONS = {
     {
         instanceID = 2874,  -- confirmed in-game
         uiMapID    = 2501,  -- confirmed in-game
-        name       = "Maisara Caverns",
+        name       = L["Maisara Caverns"],
         location   = "Zul'Aman",
         season     = "midnight",
         type       = "level",
         mythicPlus = true,
         bosses = {
-            { encounterID = 3212, name = "Muro'jin and Nekraxx",     tip = "Keep equal health — if Nekraxx dies first Muro'jin revives him at 35%; if Muro'jin dies first Nekraxx gains 20% dmg every 4s. Carrion Swoop target: step into a Freezing Trap to block the charge and stun Nekraxx 5s. Dispel Infected Pinions disease." },
-            { encounterID = 3213, name = "Vordaza",                  tip = "Burst the Deathshroud shield during Necrotic Convergence with damage CDs; kite Unstable Phantoms into each other to detonate them — killing them directly applies Lingering Dread to the group; dodge Unmake line." },
-            { encounterID = 3214, name = "Rak'tul, Vessel of Souls", tip = "In spirit realm: interrupt Malignant Souls for Spectral Residue (+25% dmg/heal/speed); avoid Restless Masses roots. Destroy Crush Souls totems before returning." },
+            { encounterID = 3212, name = L["Muro'jin and Nekraxx"],     tip = L["MurojinNekraxx_Tip"] },
+            { encounterID = 3213, name = L["Vordaza"],                  tip = L["Vordaza_Tip"] },
+            { encounterID = 3214, name = L["Rak'tul, Vessel of Souls"], tip = L["Raktul_Tip"] },
         },
         trash = {
-            { npcID = 242964, name = "Keen Headhunter",   tip = "Interrupt Hooked Snare. If it lands, use a freedom effect to clear the root and bleed." },
-            { npcID = 248686, name = "Dread Souleater",   tip = "Avoid Rain of Toads pools. Defensives for Necrotic Wave — it leaves a healing absorb on hit players." },
-            { npcID = 248685, name = "Ritual Hexxer",     tip = "Interrupt Hex first. Use spare kicks on Shadow Bolt." },
-            { npcID = 248678, name = "Hulking Juggernaut", tip = "Defensive before Deafening Roar lands — it spell-locks anyone mid-cast. Tank watch Rending Gore bleed stacks." },
-            { npcID = 249020, name = "Hexbound Eagle",    tip = "Sidestep Shredding Talons — step to the side of the eagle as it winds up." },
-            { npcID = 249022, name = "Bramblemaw Bear",   tip = "Crunch Armor stacks per bear — avoid pulling multiple bears simultaneously; rotate defensive cooldowns." },
-            { npcID = 248692, name = "Reanimated Warrior", tip = "CC or stop Reanimation at 0 HP or it revives. Any crowd-control effect works." },
-            { npcID = 248690, name = "Grim Skirmisher",   tip = "Grim Ward shield: don't purge multiple at once — each break hits the whole group. Stagger dispels." },
-            { npcID = 249030, name = "Restless Gnarldin",  tip = "Out-range Ancestral Crush. Spectral Strike autos deal shadow — healer watch sustained damage." },
-            { npcID = 249036, name = "Tormented Shade",   tip = "Interrupt Spirit Rend. Dispel the magic DoT if the kick was missed." },
-            { npcID = 253683, name = "Rokh'zal",          tip = "Ritual Sacrifice chains an ally to an altar — break the shackles to free them; freedom effects also work." },
-            { npcID = 249025, name = "Bound Defender",    tip = "Attack from behind to bypass Vigilant Defense frontal immunity. Dodge Soulstorm tornadoes." },
-            { npcID = 249024, name = "Hollow Soulrender",  tip = "Interrupt Shadowfrost Blast. Step away from allies before Frost Nova hits — it chains to nearby players." },
+            { npcID = 242964, name = L["Keen Headhunter"],   tip = L["KeenHeadhunter_Tip"] },
+            { npcID = 248686, name = L["Dread Souleater"],   tip = L["DreadSouleater_Tip"] },
+            { npcID = 248685, name = L["Ritual Hexxer"],     tip = L["RitualHexxer_Tip"] },
+            { npcID = 248678, name = L["Hulking Juggernaut"], tip = L["HulkingJuggernaut_Tip"] },
+            { npcID = 249020, name = L["Hexbound Eagle"],    tip = L["HexboundEagle_Tip"] },
+            { npcID = 249022, name = L["Bramblemaw Bear"],   tip = L["BramblemawBear_Tip"] },
+            { npcID = 248692, name = L["Reanimated Warrior"], tip = L["ReanimatedWarrior_Tip"] },
+            { npcID = 248690, name = L["Grim Skirmisher"],   tip = L["GrimSkirmisher_Tip"] },
+            { npcID = 249030, name = L["Restless Gnarldin"],  tip = L["RestlessGnarldin_Tip"] },
+            { npcID = 249036, name = L["Tormented Shade"],   tip = L["TormentedShade_Tip"] },
+            { npcID = 253683, name = L["Rokh'zal"],          tip = L["Rokhzal_Tip"] },
+            { npcID = 249025, name = L["Bound Defender"],    tip = L["BoundDefender_Tip"] },
+            { npcID = 249024, name = L["Hollow Soulrender"],  tip = L["HollowSoulrender_Tip"] },
         },
         areas = {
             { subzone = "Wailing Depths",    bossIndex = 1 },  -- Muro'jin and Nekraxx; confirmed in-game
@@ -168,26 +133,26 @@ KwikTip.DUNGEONS = {
         instanceID = 2811,  -- confirmed in-game
         uiMapID    = 2511,  -- confirmed in-game
         altMapIDs  = { 2424, 2515, 2516, 2517, 2519, 2520 },  -- all confirmed in-game except 2424
-        name       = "Magisters' Terrace",
+        name       = L["Magisters' Terrace"],
         location   = "Isle of Quel'Danas",
         season     = "midnight",
         type       = "max",
         mythicPlus = true,
         bosses = {
-            { encounterID = 3071, name = "Arcanotron Custos", tip = "Intercept orbs before they reach the boss; avoid Arcane Residue zones left after the knockback." },
-            { encounterID = 3072, name = "Seranel Sunlash",   tip = "At 100 energy, be inside a Suppression Zone or Wave of Silence pacifies you for 8s (unable to cast); also step into a zone to resolve Runic Mark (Feedback) — but zones purge your buffs." },
-            { encounterID = 3073, name = "Gemellus",          tip = "All copies share health; touch correct clone to clear Neural Link." },
-            { encounterID = 3074, name = "Degentrius",        tip = "One player per quadrant soaks Unstable Void Essence as it bounces — missing applies a 40s DoT to the group. Tank: step back out of melee for Hulking Fragment DoT dispel (drops a puddle). Never stand in Void Torrent beams — they stun." },
+            { encounterID = 3071, name = L["Arcanotron Custos"], tip = L["ArcanotronCustos_Tip"] },
+            { encounterID = 3072, name = L["Seranel Sunlash"],   tip = L["SeranelSunlash_Tip"] },
+            { encounterID = 3073, name = L["Gemellus"],          tip = L["Gemellus_Tip"] },
+            { encounterID = 3074, name = L["Degentrius"],        tip = L["Degentrius_Tip"] },
         },
         trash = {
-            { npcID = 257644, name = "Arcane Magister",     tip = "Top interrupt priority — Polymorph targets a random player; dispel if it lands." },
-            { npcID = 234486, name = "Lightward Healer",    tip = "Dispel Holy Fire; purge Power Word: Shield from allies." },
-            { npcID = 251917, name = "Animated Codex",      tip = "Arcane Volley pulses constant AoE — limit pull size and prepare healing cooldowns." },
-            { npcID = 257161, name = "Blazing Pyromancer",  tip = "Interrupt every Pyroblast; use defensives during Ignition; avoid Flamestrike." },
-            { npcID = 24761,  name = "Brightscale Wyrm",    tip = "Stagger kills — Energy Release fires on death; killing simultaneously overwhelms the group." },
-            { npcID = 234068, name = "Shadowrift Voidcaller", tip = "Use healing cooldowns or line of sight when it casts Consuming Shadows; kill spawned adds from Call of the Void." },
-            { npcID = 249086, name = "Void Infuser",        tip = "Interrupt Terror Wave every cast; dispel or use a defensive for Consuming Void debuff." },
-            { npcID = 234066, name = "Devouring Tyrant",    tip = "Tank uses defensive and self-healing for Devouring Strike (healing absorb); all players defensive for Void Bomb absorb." },
+            { npcID = 257644, name = L["Arcane Magister"],     tip = L["ArcaneMagister_Tip"] },
+            { npcID = 234486, name = L["Lightward Healer"],    tip = L["LightwardHealer_Tip"] },
+            { npcID = 251917, name = L["Animated Codex"],      tip = L["AnimatedCodex_Tip"] },
+            { npcID = 257161, name = L["Blazing Pyromancer"],  tip = L["BlazingPyromancer_Tip"] },
+            { npcID = 24761,  name = L["Brightscale Wyrm"],    tip = L["BrightscaleWyrm_Tip"] },
+            { npcID = 234068, name = L["Shadowrift Voidcaller"], tip = L["ShadowriftVoidcaller_Tip"] },
+            { npcID = 249086, name = L["Void Infuser"],        tip = L["VoidInfuser_Tip"] },
+            { npcID = 234066, name = L["Devouring Tyrant"],    tip = L["DevouringTyrant_Tip"] },
         },
         areas = {
             { subzone = "Observation Grounds",   bossIndex = 1 },  -- Arcanotron Custos; confirmed in-game
@@ -199,25 +164,25 @@ KwikTip.DUNGEONS = {
     {
         instanceID = 2915,  -- confirmed in-game
         uiMapID    = 2556,  -- confirmed in-game
-        name       = "Nexus-Point Xenas",
+        name       = L["Nexus-Point Xenas"],
         location   = "Voidstorm",
         season     = "midnight",
         type       = "max",
         mythicPlus = true,
         bosses = {
-            { encounterID = 3328, name = "Chief Corewright Kasreth", tip = "Don't cross Leyline Arrays (damage + slow). When targeted by Reflux Charge, touch an array intersection to destroy it and open space. At full energy: Corespark Detonation hits a player with a massive knockback and healing absorb DoT — watch positioning to avoid being knocked into puddles." },
-            { encounterID = 3332, name = "Corewarden Nysarra",       tip = "Avoid Lothraxion's beam during Lightscar Flare; stand in the boss's frontal cone during the 18s stun for 300% damage amp (30% healing amp too). Kill Null Vanguard adds before the stun ends — surviving adds get consumed and buff the boss." },
-            { encounterID = 3333, name = "Lothraxion",               tip = "At 100 energy, find and interrupt the real Lothraxion among his images — he's the only one without glowing horns; wrong target = Core Exposure (group damage + 20% increased Holy damage taken for 1 min)." },
+            { encounterID = 3328, name = L["Chief Corewright Kasreth"], tip = L["ChiefCorewrightKasreth_Tip"] },
+            { encounterID = 3332, name = L["Corewarden Nysarra"],       tip = L["CorewardenNysarra_Tip"] },
+            { encounterID = 3333, name = L["Lothraxion"],               tip = L["Lothraxion_Tip"] },
         },
         trash = {
-            { npcID = 241643, name = "Shadowguard Defender",  tip = "Null Sunder stacks per Defender active — control pull size; tank rotate or pop a cooldown on high-stack groups." },
-            { npcID = 241647, name = "Flux Engineer",          tip = "Suppression Field: spread to avoid cleaving the random target, then move as little as possible (movement increases damage taken). Drops a live Mana Battery on death — destroy it before it finishes its 12s cast." },
-            { npcID = 248708, name = "Nexus Adept",            tip = "Interrupt Umbra Bolt — high-damage shadow nuke; use a stun or stop if interrupt is on cooldown." },
-            { npcID = 248373, name = "Circuit Seer",           tip = "Immune to CC. Defensives and healing CDs for Arcing Mana channel; avoid Erratic Zap and Power Flux circles; watch for nearby Mana Batteries it activates — swap and destroy them before the 12s cast completes." },
-            { npcID = 248706, name = "Cursed Voidcaller",      tip = "On death casts Creeping Void — brace for the hit and use Curse dispels to remove the lingering debuff." },
-            { npcID = 251853, name = "Grand Nullifier",        tip = "Interrupt Nullify every cast; avoid Dusk Frights fear zones; turns into a Smudge on death that awakens a nearby Dreadflail — CC or cleave it fast." },
-            { npcID = 241660, name = "Duskfright Herald",      tip = "Immune to CC. Entropic Leech channels on a random player and applies a healing absorb — use a combat drop or dispel the absorb to end it. Avoid pulsing projectiles from Dark Beckoning." },
-            { npcID = 251024, name = "Dreadflail",             tip = "Tank point away from group — Void Lash frontal tank buster; dodge Flailstorm AoE if fixated on you. Also spawned as a Corewarden Nysarra add — kill before the 18s stun ends." },
+            { npcID = 241643, name = L["Shadowguard Defender"],  tip = L["ShadowguardDefender_Tip"] },
+            { npcID = 241647, name = L["Flux Engineer"],          tip = L["FluxEngineer_Tip"] },
+            { npcID = 248708, name = L["Nexus Adept"],            tip = L["NexusAdept_Tip"] },
+            { npcID = 248373, name = L["Circuit Seer"],           tip = L["CircuitSeer_Tip"] },
+            { npcID = 248706, name = L["Cursed Voidcaller"],      tip = L["CursedVoidcaller_Tip"] },
+            { npcID = 251853, name = L["Grand Nullifier"],        tip = L["GrandNullifier_Tip"] },
+            { npcID = 241660, name = L["Duskfright Herald"],      tip = L["DuskfrightHerald_Tip"] },
+            { npcID = 251024, name = L["Dreadflail"],             tip = L["Dreadflail_Tip"] },
         },
         areas = {
             { subzone = "Corespark Engineway",    bossIndex = 1 },  -- Chief Corewright Kasreth; confirmed in-game
@@ -228,16 +193,16 @@ KwikTip.DUNGEONS = {
     {
         instanceID = 2859,  -- confirmed in-game
         uiMapID    = 2500,  -- confirmed in-game
-        name       = "The Blinding Vale",
+        name       = L["The Blinding Vale"],
         location   = "Harandar",
         season     = "midnight",
         type       = "max",
         mythicPlus = false,
         bosses = {
-            { encounterID = 3199, name = "Lightblossom Trinity",   tip = "Block Lightblossom Beams to prevent Light-Gorged stacks on flowers before they detonate; interrupt Lightsower Dash to stop seed planting; all three bosses share damage." },
-            { encounterID = 3200, name = "Ikuzz the Light Hunter", tip = "Destroy Bloodthorn Roots quickly — rooted players are also hit by Crushing Footfalls; Bloodthirsty Gaze fixates Ikuzz on a player for 10s — maintain distance or be Incised." },
-            { encounterID = 3201, name = "Lightwarden Ruia",       tip = "Heal players to full to clear Grievous Thrash bleeds; at 40%, Ruia enters Haranir form (Spirits of the Vale) and rapidly cycles all abilities — tank rotate to avoid stacking Pulverizing Strikes damage-taken debuff." },
-            { encounterID = 3202, name = "Ziekket",                tip = "Intercept Lightbloom's Essence globules before the boss absorbs them — each absorbed globule grants a Florescent Outburst stack (stacking shield); touching them yourself grants Lightbloom's Might (+dmg/healing). Position boss's Lightbeam sweep over Dormant Lashers to vaporize them; dodge the beam and Lightsap puddles." },
+            { encounterID = 3199, name = L["Lightblossom Trinity"],   tip = L["LightblossomTrinity_Tip"] },
+            { encounterID = 3200, name = L["Ikuzz the Light Hunter"], tip = L["IkuzzLightHunter_Tip"] },
+            { encounterID = 3201, name = L["Lightwarden Ruia"],       tip = L["LightwardenRuia_Tip"] },
+            { encounterID = 3202, name = L["Ziekket"],                tip = L["Ziekket_Tip"] },
         },
         areas = {
             { subzone = "The Luminous Garden",  bossIndex = 1 },  -- Lightblossom Trinity; confirmed in-game
@@ -250,15 +215,15 @@ KwikTip.DUNGEONS = {
         instanceID = 2923,  -- confirmed in-game
         uiMapID    = 2572,  -- confirmed in-game
         altMapIDs  = { 2573, 2574 },  -- 2573/2574 = confirmed in-game sub-zones
-        name       = "Voidscar Arena",
+        name       = L["Voidscar Arena"],
         location   = "Voidstorm",
         season     = "midnight",
         type       = "max",
         mythicPlus = false,
         bosses = {
-            { encounterID = 3285, name = "Taz'Rah",  tip = "Stay out of Dark Rift gravity pull; dodge shade Nether Dash lines." },
-            { encounterID = 3286, name = "Atroxus",  npcID = 239008, tip = "Avoid Noxious Breath frontal; when Toxic Creepers fixate on a player, that player and nearby allies spread out to avoid the 8-yard toxic aura." },
-            { encounterID = 3287, name = "Charonus", npcID = 248015, tip = "Lead Gravitic Orbs into Singularities to consume them; avoid the Unstable Singularity gravity well." },
+            { encounterID = 3285, name = L["Taz'Rah"],  tip = L["TazRah_Tip"] },
+            { encounterID = 3286, name = L["Atroxus"],  npcID = 239008, tip = L["Atroxus_Tip"] },
+            { encounterID = 3287, name = L["Charonus"], npcID = 248015, tip = L["Charonus_Tip"] },
         },
         areas = {
             { subzone = "The Den", bossIndex = 1 },  -- Taz'Rah's arena; confirmed in-game
@@ -273,60 +238,60 @@ KwikTip.DUNGEONS = {
     {
         instanceID = 2526,  -- BigWigs Loader.lua
         uiMapID    = 0,     -- TODO: verify in-game with /run print(C_Map.GetBestMapForUnit("player"))
-        name       = "Algeth'ar Academy",
+        name       = L["Algeth'ar Academy"],
         location   = "Thaldraszus",
         season     = "legacy",
         type       = "max",
         mythicPlus = true,
         bosses = {
-            { encounterID = 0, name = "Overgrown Ancient", tip = "Dodge Burst Pods; free allies from Germinate roots; interrupt Lumbering Swipe." },
-            { encounterID = 0, name = "Crawth",            tip = "Interrupt Screech; spread for quill barrage; kill wind adds quickly." },
-            { encounterID = 0, name = "Vexamus",           tip = "Interrupt Spellvoid; dodge Overloaded explosions; spread Arcane Puddle soaks." },
-            { encounterID = 0, name = "Echo of Doragosa",  tip = "Spread for Astral Breath; interrupt Nullifying Pulse; dodge Arcane Rifts." },
+            { encounterID = 0, name = L["Overgrown Ancient"], tip = L["OvergrownAncient_Tip"] },
+            { encounterID = 0, name = L["Crawth"],            tip = L["Crawth_Tip"] },
+            { encounterID = 0, name = L["Vexamus"],           tip = L["Vexamus_Tip"] },
+            { encounterID = 0, name = L["Echo of Doragosa"],  tip = L["EchoOfDoragosa_Tip"] },
         },
     },
     {
         instanceID = 658,  -- BigWigs Loader.lua
         uiMapID    = 0,    -- TODO: verify in-game with /run print(C_Map.GetBestMapForUnit("player"))
-        name       = "Pit of Saron",
+        name       = L["Pit of Saron"],
         location   = "Icecrown",
         season     = "legacy",
         type       = "max",
         mythicPlus = true,
         bosses = {
-            { encounterID = 0, name = "Forgemaster Garfrost", tip = "LoS boss behind ice boulders to shed Permafrost stacks before they stack too high." },
-            { encounterID = 0, name = "Ick & Krick",          tip = "Run from Ick during Pursuit; spread for Explosive Barrage." },
-            { encounterID = 0, name = "Scourgelord Tyrannus", tip = "Dodge Overlord's Brand; spread to avoid chained Unholy Power debuffs." },
+            { encounterID = 0, name = L["Forgemaster Garfrost"], tip = L["ForgemasterGarfrost_Tip"] },
+            { encounterID = 0, name = L["Ick & Krick"],          tip = L["IckKrick_Tip"] },
+            { encounterID = 0, name = L["Scourgelord Tyrannus"], tip = L["ScourgelordTyrannus_Tip"] },
         },
     },
     {
         instanceID = 1753,  -- BigWigs Loader.lua
         uiMapID    = 0,     -- TODO: verify in-game with /run print(C_Map.GetBestMapForUnit("player"))
-        name       = "Seat of the Triumvirate",
+        name       = L["Seat of the Triumvirate"],
         location   = "Argus",
         season     = "legacy",
         type       = "max",
         mythicPlus = true,
         bosses = {
-            { encounterID = 0, name = "Zuraal the Ascended", tip = "Step through void portals immediately when teleported to avoid damage." },
-            { encounterID = 0, name = "Saprish",             tip = "Kill Darkfang before Saprish's energy caps; boss is vulnerable without his pet." },
-            { encounterID = 0, name = "Viceroy Nezhar",      tip = "Interrupt Dark Bulwark; dodge Void Lashing tentacle swipes." },
-            { encounterID = 0, name = "L'ura",               tip = "Collect soul fragments promptly; avoid standing in void pools." },
+            { encounterID = 0, name = L["Zuraal the Ascended"], tip = L["ZuraalAscended_Tip"] },
+            { encounterID = 0, name = L["Saprish"],             tip = L["Saprish_Tip"] },
+            { encounterID = 0, name = L["Viceroy Nezhar"],      tip = L["ViceroyNezhar_Tip"] },
+            { encounterID = 0, name = L["L'ura"],               tip = L["Lura_Tip"] },
         },
     },
     {
         instanceID = 1209,  -- BigWigs Loader.lua
         uiMapID    = 0,     -- TODO: verify in-game with /run print(C_Map.GetBestMapForUnit("player"))
-        name       = "Skyreach",
+        name       = L["Skyreach"],
         location   = "Spires of Arak",
         season     = "legacy",
         type       = "max",
         mythicPlus = true,
         bosses = {
-            { encounterID = 0, name = "Ranjit",          tip = "Hide behind wind barriers for Fan of Blades; interrupt Four Winds." },
-            { encounterID = 0, name = "Araknath",        tip = "Dodge Burn ground fissures; spread to reduce Solarflare chain damage." },
-            { encounterID = 0, name = "Rukhran",         tip = "Burn Spire Eagle adds fast; stay out of Solar Breath frontal cone." },
-            { encounterID = 0, name = "High Sage Viryx", tip = "Interrupt Lens Flare; kill Initiates before they carry players off the platform." },
+            { encounterID = 0, name = L["Ranjit"],          tip = L["Ranjit_Tip"] },
+            { encounterID = 0, name = L["Araknath"],        tip = L["Araknath_Tip"] },
+            { encounterID = 0, name = L["Rukhran"],         tip = L["Rukhran_Tip"] },
+            { encounterID = 0, name = L["High Sage Viryx"], tip = L["HighSageViryx_Tip"] },
         },
     },
 }

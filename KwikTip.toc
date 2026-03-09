@@ -11,6 +11,8 @@
 ## X-Wago-ID: QN53W7KB
 ## X-WoWI-ID: 27074
 
+Locales\enUS.lua
+Locales\zhCN.lua
 Init.lua
 DungeonData.lua
 Core.lua
