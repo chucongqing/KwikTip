@@ -25,7 +25,7 @@ KwikTip.DEFAULTS = {
     debugSnapshots = {},     -- written by /kwik debug; inspection log for post-session review
     
     -- Font settings
-    fontName       = "Friz Quadrata TT", -- Default WoW font name
+    fontName       = "Chat Font", -- LibSharedMedia recommended font key
     fontSize       = 12,
     fontOutline    = "OUTLINE",
 }

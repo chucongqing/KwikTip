@@ -17,19 +17,20 @@ local cornerHandles = {}
 function KwikTip:UpdateFont()
     if not contentText then return end
     local db = KwikTipDB
-    local fontPath
     
     if LSM then
-        fontPath = LSM:Fetch("font", db.fontName)
+        -- LSM handles fetching the current client-recommended font if db.fontName is missing
+        -- or if "Chat Font" is the key.
+        local fontPath = LSM:Fetch("font", db.fontName or "Chat Font")
+        if fontPath then
+            contentText:SetFont(fontPath, db.fontSize, db.fontOutline)
+            return
+        end
     end
     
-    -- Fallback to GameFontNormal if LSM is missing or font not found
-    if not fontPath then
-        local _, size, flags = GameFontNormal:GetFont()
-        contentText:SetFont(GameFontNormal:GetFont(), db.fontSize or size, db.fontOutline or flags)
-    else
-        contentText:SetFont(fontPath, db.fontSize, db.fontOutline)
-    end
+    -- Final fallback if LSM is missing or font is not found
+    local f, s, l = GameFontNormal:GetFont()
+    contentText:SetFont(f, db.fontSize or s, db.fontOutline or l)
 end
 
 -- ============================================================
